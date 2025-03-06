@@ -18,37 +18,82 @@ class User:
         self.client = MongoClient(mongodb_uri)
         self.db = self.client[db_name]
         self.users = self.db.users
+        self.tenants = self.db.tenants
+
+    def create_tenant(
+        self,
+        tenant_id: str,
+        name: str
+    ) -> str:
+        """
+        สร้างผู้เช่าใหม่
+        
+        Args:
+            tenant_id (str): ID ของผู้เช่า
+            name (str): ชื่อผู้เช่า
+            
+        Returns:
+            str: ID ของผู้เช่าที่สร้าง
+        """
+        tenant = {
+            '_id': ObjectId(tenant_id),
+            'name': name,
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow()
+        }
+        
+        result = self.tenants.insert_one(tenant)
+        return str(result.inserted_id)
 
     def create_user(
         self,
         user_id: str,
-        platform: str,
-        metadata: Optional[Dict[str, Any]] = None
+        tenant_id: str,
+        username: str,
+        password: str,
+        role: str = 'user',
+        status: str = 'active'
     ) -> str:
         """
         สร้างผู้ใช้งานใหม่
         
         Args:
             user_id (str): ID ของผู้ใช้
-            platform (str): แพลตฟอร์มที่ใช้งาน (LINE, Facebook, etc.)
-            metadata (Dict[str, Any], optional): ข้อมูลเพิ่มเติม
+            tenant_id (str): ID ของผู้เช่า
+            username (str): ชื่อผู้ใช้
+            password (str): รหัสผ่าน
+            role (str, optional): บทบาทของผู้ใช้ (admin หรือ user)
+            status (str, optional): สถานะของผู้ใช้ (active หรือ inactive)
             
         Returns:
             str: ID ของผู้ใช้ที่สร้าง
         """
         user = {
-            'user_id': user_id,
-            'platform': platform,
-            'metadata': metadata or {},
-            'preferences': {},
-            'active_conversations': [],
+            '_id': ObjectId(user_id),
+            'tenant_id': ObjectId(tenant_id),
+            'username': username,
+            'password_hash': self._generate_password_hash(password),
+            'role': role,
+            'status': status,
             'created_at': datetime.utcnow(),
-            'updated_at': datetime.utcnow(),
-            'last_active': datetime.utcnow()
+            'updated_at': datetime.utcnow()
         }
         
         result = self.users.insert_one(user)
         return str(result.inserted_id)
+
+    def _generate_password_hash(self, password: str) -> str:
+        """
+        เข้ารหัสรหัสผ่าน
+        
+        Args:
+            password (str): รหัสผ่าน
+            
+        Returns:
+            str: รหัสผ่านเข้ารหัส
+        """
+        # implement password hashing algorithm here
+        pass
 
     def get_user(self, user_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -60,9 +105,10 @@ class User:
         Returns:
             Optional[Dict[str, Any]]: ข้อมูลผู้ใช้ที่พบ หรือ None ถ้าไม่พบ
         """
-        result = self.users.find_one({'user_id': user_id})
+        result = self.users.find_one({'_id': ObjectId(user_id)})
         if result:
             result['_id'] = str(result['_id'])
+            result['tenant_id'] = str(result['tenant_id'])
         return result
 
     def update_user(
@@ -82,68 +128,8 @@ class User:
         """
         update_data['updated_at'] = datetime.utcnow()
         result = self.users.update_one(
-            {'user_id': user_id},
+            {'_id': ObjectId(user_id)},
             {'$set': update_data}
-        )
-        return result.modified_count > 0
-
-    def update_last_active(self, user_id: str) -> bool:
-        """
-        อัปเดตเวลาที่ผู้ใช้มีการทำงานล่าสุด
-        
-        Args:
-            user_id (str): ID ของผู้ใช้
-            
-        Returns:
-            bool: True ถ้าอัปเดตสำเร็จ
-        """
-        return self.update_user(user_id, {'last_active': datetime.utcnow()})
-
-    def add_active_conversation(
-        self,
-        user_id: str,
-        conversation_id: str
-    ) -> bool:
-        """
-        เพิ่มการสนทนาที่กำลังดำเนินอยู่
-        
-        Args:
-            user_id (str): ID ของผู้ใช้
-            conversation_id (str): ID ของการสนทนา
-            
-        Returns:
-            bool: True ถ้าเพิ่มสำเร็จ
-        """
-        result = self.users.update_one(
-            {'user_id': user_id},
-            {
-                '$push': {'active_conversations': conversation_id},
-                '$set': {'updated_at': datetime.utcnow()}
-            }
-        )
-        return result.modified_count > 0
-
-    def remove_active_conversation(
-        self,
-        user_id: str,
-        conversation_id: str
-    ) -> bool:
-        """
-        ลบการสนทนาที่เสร็จสิ้นแล้ว
-        
-        Args:
-            user_id (str): ID ของผู้ใช้
-            conversation_id (str): ID ของการสนทนา
-            
-        Returns:
-            bool: True ถ้าลบสำเร็จ
-        """
-        result = self.users.update_one(
-            {'user_id': user_id},
-            {
-                '$pull': {'active_conversations': conversation_id},
-                '$set': {'updated_at': datetime.utcnow()}
-            }
         )
         return result.modified_count > 0
 
@@ -180,34 +166,35 @@ class User:
     def get_active_users(
         self,
         minutes: int = 30,
-        platform: Optional[str] = None
+        tenant_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         ดึงรายชื่อผู้ใช้ที่กำลังใช้งานอยู่
         
         Args:
             minutes (int): จำนวนนาทีย้อนหลังที่ถือว่ายังใช้งานอยู่
-            platform (str, optional): กรองตามแพลตฟอร์ม
+            tenant_id (str, optional): กรองตามผู้เช่า
             
         Returns:
             List[Dict[str, Any]]: รายการผู้ใช้ที่กำลังใช้งาน
         """
         query = {
-            'last_active': {
+            'updated_at': {
                 '$gte': datetime.utcnow().replace(
                     minute=datetime.utcnow().minute - minutes
                 )
             }
         }
         
-        if platform:
-            query['platform'] = platform
+        if tenant_id:
+            query['tenant_id'] = ObjectId(tenant_id)
             
         cursor = self.users.find(query)
         
         users = []
         for user in cursor:
             user['_id'] = str(user['_id'])
+            user['tenant_id'] = str(user['tenant_id'])
             users.append(user)
             
         return users

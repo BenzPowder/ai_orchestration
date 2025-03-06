@@ -1,8 +1,9 @@
 import os
 from dotenv import load_dotenv
 
-# โหลดค่าจากไฟล์ .env
-load_dotenv()
+# โหลดค่าจากไฟล์ .env ถ้ามี
+if os.path.exists('.env'):
+    load_dotenv()
 
 class Config:
     """
@@ -12,10 +13,9 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
     DEBUG = os.getenv('FLASK_DEBUG', '1') == '1'
-    PORT = int(os.getenv('PORT', 5000))
 
     # MongoDB Configuration
-    MONGODB_URI = os.getenv('MONGODB_URI')
+    MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017')
     MONGODB_DB_NAME = os.getenv('MONGODB_DB_NAME', 'ai_orchestration')
 
     # LINE Configuration
@@ -27,7 +27,6 @@ class Config:
 
     # LangChain Configuration
     LANGCHAIN_VERBOSE = os.getenv('LANGCHAIN_VERBOSE', 'True') == 'True'
-    LANGCHAIN_API_KEY = os.getenv('LANGCHAIN_API_KEY')
 
     # EA Service Configuration
     COMPLAINT_CATEGORIES = {
