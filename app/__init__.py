@@ -7,6 +7,7 @@ from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 import os
 import redis
+from urllib.parse import quote_plus
 
 # โหลดค่าจากไฟล์ .env
 load_dotenv()
@@ -25,13 +26,13 @@ def create_app():
     app = Flask(__name__)
     
     # ตั้งค่า configuration
-    db_user = os.environ.get('DB_USER')
-    db_password = os.environ.get('DB_PASSWORD')
-    db_host = os.environ.get('DB_HOST')
-    db_name = os.environ.get('DB_NAME')
+    db_user = quote_plus(os.environ.get('DB_USER', ''))
+    db_password = quote_plus(os.environ.get('DB_PASSWORD', ''))
+    db_host = os.environ.get('DB_HOST', '')
+    db_name = os.environ.get('DB_NAME', '')
     
-    # สร้าง Database URL ที่สมบูรณ์ โดยใช้ pymysql driver
-    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+    # สร้าง Database URL ที่สมบูรณ์ โดยใช้ pymysql driver และ URL encoding
+    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}?charset=utf8mb4"
     
     app.config.from_mapping(
         SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
@@ -53,8 +54,13 @@ def create_app():
         app.register_blueprint(admin.admin_bp)
         app.register_blueprint(api.api_bp, url_prefix='/api')
         
-        # สร้างฐานข้อมูลถ้ายังไม่มี
-        db.create_all()
+        try:
+            # สร้างฐานข้อมูลถ้ายังไม่มี
+            db.create_all()
+        except Exception as e:
+            app.logger.error(f"Database initialization error: {str(e)}")
+            # ไม่ raise error เพื่อให้แอพยังทำงานต่อได้
+            pass
     
     return app
 
