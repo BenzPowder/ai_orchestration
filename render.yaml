@@ -8,13 +8,13 @@ services:
       - key: FLASK_ENV
         value: production
       - key: DB_HOST
-        sync: false
+        value: host213.dungbhumi.com
       - key: DB_USER
-        sync: false
+        value: aiorchestration
       - key: DB_PASSWORD
-        sync: false
+        value: Aa!35741
       - key: DB_NAME
-        value: ai_orchestration
+        value: aiorchestration
       - key: OPENAI_API_KEY
         sync: false
       - key: SECRET_KEY
@@ -39,13 +39,6 @@ services:
 
   - type: redis
     name: ai-orchestration-cache
-    ipAllowList:
-      - source: 0.0.0.0/0
-        description: everywhere
-    plan: free
-
-  - type: mysql
-    name: ai-orchestration-db
     ipAllowList:
       - source: 0.0.0.0/0
         description: everywhere
