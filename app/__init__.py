@@ -30,8 +30,8 @@ def create_app():
     db_host = os.environ.get('DB_HOST')
     db_name = os.environ.get('DB_NAME')
     
-    # สร้าง Database URL ที่สมบูรณ์
-    db_url = f"mysql://{db_user}:{db_password}@{db_host}/{db_name}"
+    # สร้าง Database URL ที่สมบูรณ์ โดยใช้ pymysql driver
+    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
     
     app.config.from_mapping(
         SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
