@@ -28,11 +28,10 @@ def create_app():
     db_user = os.environ.get('DB_USER')
     db_password = os.environ.get('DB_PASSWORD')
     db_host = os.environ.get('DB_HOST')
-    db_port = os.environ.get('DB_PORT', '3306')  # ใช้ port default ถ้าไม่ได้ระบุ
     db_name = os.environ.get('DB_NAME')
     
     # สร้าง Database URL ที่สมบูรณ์
-    db_url = f"mysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    db_url = f"mysql://{db_user}:{db_password}@{db_host}/{db_name}"
     
     app.config.from_mapping(
         SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
