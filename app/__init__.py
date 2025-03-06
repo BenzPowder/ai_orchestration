@@ -1,15 +1,15 @@
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_login import LoginManager
-from flask_migrate import Migrate
-from flask_jwt_extended import JWTManager
-from flask_redis import FlaskRedis
-from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import os
 import redis
 from urllib.parse import quote_plus
+from flask_redis import FlaskRedis
 
 # โหลดค่าจากไฟล์ .env
 load_dotenv()
@@ -44,6 +44,8 @@ def create_app():
         SQLALCHEMY_DATABASE_URI=db_url,
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         OPENAI_API_KEY=os.environ.get('OPENAI_API_KEY'),
+        RATELIMIT_STORAGE_URL=os.environ.get("RATELIMIT_STORAGE_URL", "redis://localhost:6379/1"),
+        REDIS_URL=os.environ.get("REDIS_URL", "redis://localhost:6379/0")
     )
     
     # กำหนดค่า extensions
