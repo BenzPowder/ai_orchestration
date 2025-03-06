@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}แดชบอร์ด | AI Orchestration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">แดชบอร์ด</h1>
+
+    <!-- สถิติการใช้งาน -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-2">คำขอทั้งหมด (24 ชม.)</h3>
+            <p class="text-4xl font-bold text-blue-600">{{ total_requests }}</p>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-2">อัตราความสำเร็จ</h3>
+            <p class="text-4xl font-bold text-green-600">{{ "%.1f"|format(success_rate) }}%</p>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-2">AI Sub-Agents ทั้งหมด</h3>
+            <p class="text-4xl font-bold text-purple-600">{{ top_agents|length }}</p>
+        </div>
+    </div>
+
+    <!-- AI Sub-Agents ยอดนิยม -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">AI Sub-Agents ยอดนิยม</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead>
+                    <tr>
+                        <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">ชื่อ</th>
+                        <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">ประเภท</th>
+                        <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">จำนวนการใช้งาน</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for agent, count in top_agents %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                            <div class="text-sm leading-5 font-medium text-gray-900">{{ agent.name }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {{ agent.type }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200 text-sm leading-5 text-gray-500">
+                            {{ count }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ลิงก์ด่วน -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <a href="{{ url_for('admin.list_agents') }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-200">
+            <h3 class="text-lg font-semibold mb-2">จัดการ AI Sub-Agents</h3>
+            <p class="text-gray-600">เพิ่ม แก้ไข หรือลบ AI Sub-Agents</p>
+        </a>
+        
+        <a href="{{ url_for('admin.list_webhooks') }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-200">
+            <h3 class="text-lg font-semibold mb-2">จัดการ Webhooks</h3>
+            <p class="text-gray-600">ตั้งค่าการแจ้งเตือนและการเชื่อมต่อ</p>
+        </a>
+        
+        <a href="{{ url_for('admin.view_stats') }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-200">
+            <h3 class="text-lg font-semibold mb-2">สถิติการใช้งาน</h3>
+            <p class="text-gray-600">ดูรายงานและสถิติโดยละเอียด</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

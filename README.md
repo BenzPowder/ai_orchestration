@@ -1,59 +1,118 @@
 # AI Orchestration System
 
-ระบบจัดการและประสานงานระหว่าง AI Agents เพื่อเพิ่มประสิทธิภาพในการทำงานและตอบสนองความต้องการของผู้ใช้
+ระบบจัดการ AI แบบ Multi-tenant ที่มีความยืดหยุ่นและปลอดภัย สามารถจัดการ AI Sub-Agents และการประมวลผลข้อความได้อย่างมีประสิทธิภาพ
 
-## โครงสร้างระบบ
+## คุณสมบัติหลัก
 
-### 1. AI Manager (Main Agent)
-- ทำหน้าที่เป็นผู้จัดการหลักในการรับข้อความจากผู้ใช้
-- วิเคราะห์และจำแนกประเภทข้อความว่าเกี่ยวข้องกับโปรเจกต์ใด
-- ส่งต่อคำสั่งไปยัง AI Sub-Agents ที่เหมาะสม
-- ใช้ LangChain Agent ในการวิเคราะห์ข้อความ
-
-### 2. AI Sub-Agents (Specialized AI)
-- AI เฉพาะทางที่มีความเชี่ยวชาญในแต่ละด้าน
-- สามารถเพิ่มจำนวน Agents ได้ตามความต้องการ
-- ทำงานร่วมกับ AI Manager เพื่อประมวลผลและตอบกลับผู้ใช้
-
-### 3. Database & API Integration
-- ใช้ MongoDB ในการจัดเก็บข้อมูล
-  - เก็บประวัติการสนทนา คำถาม-คำตอบ
-  - รองรับ Full-Text Search และ Vector Search (Atlas Vector)
-- LINE Official Account API สำหรับการติดต่อกับผู้ใช้
-- OpenAI API สำหรับการประมวลผลและตอบกลับ
-
-## เทคโนโลยีที่ใช้
-- Python Flask - Web Framework
-- LangChain - AI Agent Framework
-- MongoDB - ฐานข้อมูล
-- OpenAI - AI Model
-- LINE OA API - ช่องทางการสื่อสาร
-- Render - Cloud Hosting Platform
+- **Multi-tenant Architecture**: รองรับหลายองค์กรในระบบเดียว พร้อมการแยกข้อมูลและการเข้าถึง
+- **AI Sub-Agent Management**: จัดการและกำหนดค่า AI Sub-Agents ได้อย่างยืดหยุ่น
+- **ความปลอดภัย**: ระบบ RBAC และการยืนยันตัวตนด้วย JWT
+- **การติดตามและวิเคราะห์**: บันทึกและวิเคราะห์การใช้งานอย่างละเอียด
+- **Webhook Integration**: รองรับการเชื่อมต่อกับระบบภายนอกผ่าน webhooks
+- **Rate Limiting**: ควบคุมการใช้งาน API อย่างมีประสิทธิภาพ
+- **Template Management**: จัดการ prompt templates สำหรับ AI Sub-Agents
 
 ## การติดตั้ง
-1. ติดตั้ง Python 3.8 ขึ้นไป
-2. ติดตั้ง dependencies:
+
+1. Clone repository:
+```bash
+git clone https://github.com/yourusername/ai-orchestration.git
+cd ai-orchestration
+```
+
+2. สร้าง virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
+```
+
+3. ติดตั้ง dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-## การตั้งค่า
-1. สร้างไฟล์ `.env` และกำหนดค่าต่อไปนี้:
+4. ตั้งค่า environment variables:
+```bash
+cp .env.example .env
+# แก้ไขไฟล์ .env ตามการตั้งค่าของคุณ
 ```
-OPENAI_API_KEY=your_openai_api_key
-MONGODB_URI=your_mongodb_uri
-LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_token
-LINE_CHANNEL_SECRET=your_line_channel_secret
+
+5. สร้างฐานข้อมูล:
+```bash
+flask db upgrade
 ```
 
 ## การใช้งาน
-1. รันเซิร์ฟเวอร์:
+
+1. รัน development server:
 ```bash
-python app.py
+flask run
 ```
-2. เซิร์ฟเวอร์จะทำงานที่ `http://localhost:5000`
+
+2. เข้าถึง API ที่:
+- API Endpoint: `http://localhost:5000/api`
+- Admin Dashboard: `http://localhost:5000/admin`
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/login`: เข้าสู่ระบบและรับ JWT token
+- `POST /api/auth/register`: ลงทะเบียนผู้ใช้ใหม่
+
+### AI Processing
+- `POST /api/process`: ประมวลผลข้อความด้วย AI
+- `GET /api/agents`: ดูรายการ AI Sub-Agents ที่มี
+
+### Admin API
+- `POST /api/admin/agents`: สร้าง AI Sub-Agent ใหม่
+- `GET /api/admin/stats`: ดูสถิติการใช้งาน
 
 ## การ Deploy
-- ใช้ Render.com สำหรับ deployment
-- ตั้งค่า environment variables ใน Render dashboard
-- เชื่อมต่อกับ GitHub repository สำหรับ automatic deployment
+
+### Deploy บน Render
+
+1. เชื่อมต่อ GitHub repository กับ Render
+
+2. Render จะตั้งค่าบริการต่อไปนี้อัตโนมัติ:
+   - Web service สำหรับ AI Orchestration
+   - MySQL database
+   - Redis cache
+
+3. ตั้งค่า Environment Variables บน Render ตามที่ระบุใน `.env.example`
+
+### Deploy แบบ Manual
+
+1. ติดตั้ง dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. ตั้งค่า environment variables
+
+3. รัน production server:
+```bash
+gunicorn app:create_app() --bind 0.0.0.0:$PORT
+```
+
+## การพัฒนา
+
+### โครงสร้างโปรเจค
+
+ดูรายละเอียดเพิ่มเติมได้ที่ [docs/project_structure.md](docs/project_structure.md)
+
+### การทดสอบ
+
+รันชุดทดสอบ:
+```bash
+pytest
+```
+
+รันพร้อม coverage report:
+```bash
+pytest --cov=app tests/
+```
+
+## License
+
+MIT License - ดูรายละเอียดเพิ่มเติมได้ที่ [LICENSE](LICENSE)

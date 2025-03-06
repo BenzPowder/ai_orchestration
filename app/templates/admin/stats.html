@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}สถิติการใช้งาน | AI Orchestration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">สถิติการใช้งาน</h1>
+
+    <!-- ฟิลเตอร์ -->
+    <div class="bg-white shadow rounded-lg p-6 mb-8">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2" for="start_date">
+                    วันที่เริ่มต้น
+                </label>
+                <input type="date" id="start_date" name="start_date"
+                    value="{{ start_date }}"
+                    class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2" for="end_date">
+                    วันที่สิ้นสุด
+                </label>
+                <input type="date" id="end_date" name="end_date"
+                    value="{{ end_date }}"
+                    class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2" for="agent_id">
+                    AI Sub-Agent
+                </label>
+                <select id="agent_id" name="agent_id"
+                    class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    <option value="">ทั้งหมด</option>
+                    {% for agent in agents %}
+                    <option value="{{ agent.id }}" {% if agent.id == selected_agent_id %}selected{% endif %}>
+                        {{ agent.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex items-end">
+                <button type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    ค้นหา
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- สรุปสถิติ -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-2">คำขอทั้งหมด</h3>
+            <p class="text-4xl font-bold text-blue-600">{{ stats.total_requests }}</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-2">อัตราความสำเร็จ</h3>
+            <p class="text-4xl font-bold text-green-600">{{ "%.1f"|format(stats.success_rate) }}%</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-2">จำนวนข้อผิดพลาด</h3>
+            <p class="text-4xl font-bold text-red-600">{{ stats.error_count }}</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-2">เวลาประมวลผลเฉลี่ย</h3>
+            <p class="text-4xl font-bold text-purple-600">{{ "%.2f"|format(stats.total_processing_time / stats.total_requests if stats.total_requests > 0 else 0) }}s</p>
+        </div>
+    </div>
+
+    <!-- กราฟแสดงสถิติ -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- กราฟแท่งแสดงจำนวนคำขอรายวัน -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">จำนวนคำขอรายวัน</h3>
+            <div class="h-64">
+                <canvas id="requestsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- กราฟวงกลมแสดงสัดส่วนสถานะ -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">สัดส่วนสถานะการทำงาน</h3>
+            <div class="h-64">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // ข้อมูลสำหรับกราฟแท่ง
+    const requestsCtx = document.getElementById('requestsChart').getContext('2d');
+    new Chart(requestsCtx, {
+        type: 'bar',
+        data: {
+            labels: ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'],
+            datasets: [{
+                label: 'จำนวนคำขอ',
+                data: [12, 19, 3, 5, 2, 3, 7],
+                backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                borderColor: 'rgb(59, 130, 246)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // ข้อมูลสำหรับกราฟวงกลม
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['สำเร็จ', 'ผิดพลาด'],
+            datasets: [{
+                data: [{{ stats.success_count }}, {{ stats.error_count }}],
+                backgroundColor: [
+                    'rgba(34, 197, 94, 0.5)',
+                    'rgba(239, 68, 68, 0.5)'
+                ],
+                borderColor: [
+                    'rgb(34, 197, 94)',
+                    'rgb(239, 68, 68)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

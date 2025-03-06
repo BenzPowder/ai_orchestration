@@ -3,18 +3,50 @@ services:
     name: ai-orchestration
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app.app:create_app() --bind 0.0.0.0:$PORT
+    startCommand: gunicorn app:create_app() --bind 0.0.0.0:$PORT
     envVars:
       - key: FLASK_ENV
         value: production
-      - key: MONGODB_URI
+      - key: DB_HOST
         sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: ai_orchestration
       - key: OPENAI_API_KEY
-        sync: false
-      - key: LINE_CHANNEL_SECRET
-        sync: false
-      - key: LINE_CHANNEL_ACCESS_TOKEN
         sync: false
       - key: SECRET_KEY
         generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: ai-orchestration-cache
+          property: connectionString
+      - key: RATELIMIT_DEFAULT
+        value: "100 per day"
+      - key: RATELIMIT_STORAGE_URL
+        fromService:
+          type: redis
+          name: ai-orchestration-cache
+          property: connectionString
+      - key: PASSWORD_SALT
+        generateValue: true
     autoDeploy: true
+
+  - type: redis
+    name: ai-orchestration-cache
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+    plan: free
+
+  - type: mysql
+    name: ai-orchestration-db
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+    plan: free

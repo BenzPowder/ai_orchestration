@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "แก้ไข" if webhook else "สร้าง" }} Webhook | AI Orchestration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold">{{ "แก้ไข" if webhook else "สร้าง" }} Webhook</h1>
+            <a href="{{ url_for('admin.list_webhooks') }}" class="text-gray-600 hover:text-gray-900">
+                กลับไปหน้ารายการ
+            </a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
+                    ชื่อ Webhook
+                </label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="name" name="name" type="text" placeholder="ชื่อ Webhook"
+                    value="{{ webhook.name if webhook else '' }}" required>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="url">
+                    URL
+                </label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="url" name="url" type="url" placeholder="https://api.example.com/webhook"
+                    value="{{ webhook.url if webhook else '' }}" required>
+                <p class="text-gray-600 text-xs italic mt-1">URL ที่จะส่ง webhook ไป</p>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Events
+                </label>
+                <div class="space-y-2">
+                    {% set events = webhook.events if webhook else [] %}
+                    <div class="flex items-center">
+                        <input type="checkbox" id="event_message" name="events" value="message"
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            {% if 'message' in events %}checked{% endif %}>
+                        <label for="event_message" class="ml-2 block text-sm text-gray-900">
+                            Message Processing
+                        </label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="event_agent" name="events" value="agent"
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            {% if 'agent' in events %}checked{% endif %}>
+                        <label for="event_agent" class="ml-2 block text-sm text-gray-900">
+                            Agent Selection
+                        </label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="event_error" name="events" value="error"
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            {% if 'error' in events %}checked{% endif %}>
+                        <label for="event_error" class="ml-2 block text-sm text-gray-900">
+                            Error Events
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="headers">
+                    Headers (JSON)
+                </label>
+                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline font-mono"
+                    id="headers" name="headers" rows="4" placeholder='{"Authorization": "Bearer token"}'
+                >{{ webhook.headers|tojson if webhook and webhook.headers else '' }}</textarea>
+                <p class="text-gray-600 text-xs italic mt-1">HTTP headers ในรูปแบบ JSON (ไม่จำเป็น)</p>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                    {{ "บันทึกการแก้ไข" if webhook else "สร้าง Webhook" }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // ตรวจสอบความถูกต้องของ JSON headers
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const headersField = document.getElementById('headers');
+        if (headersField.value.trim()) {
+            try {
+                JSON.parse(headersField.value);
+            } catch (error) {
+                e.preventDefault();
+                alert('กรุณาระบุ Headers ในรูปแบบ JSON ที่ถูกต้อง');
+            }
+        }
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

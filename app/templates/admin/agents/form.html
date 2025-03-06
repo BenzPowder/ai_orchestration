@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "แก้ไข" if agent else "สร้าง" }} AI Sub-Agent | AI Orchestration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold">{{ "แก้ไข" if agent else "สร้าง" }} AI Sub-Agent</h1>
+            <a href="{{ url_for('admin.list_agents') }}" class="text-gray-600 hover:text-gray-900">
+                กลับไปหน้ารายการ
+            </a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
+                    ชื่อ Agent
+                </label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="name" name="name" type="text" placeholder="ชื่อ Agent"
+                    value="{{ agent.name if agent else '' }}" required>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="type">
+                    ประเภท
+                </label>
+                <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="type" name="type" required>
+                    <option value="">เลือกประเภท</option>
+                    <option value="text" {% if agent and agent.type == 'text' %}selected{% endif %}>Text Processing</option>
+                    <option value="qa" {% if agent and agent.type == 'qa' %}selected{% endif %}>Question Answering</option>
+                    <option value="chat" {% if agent and agent.type == 'chat' %}selected{% endif %}>Chat</option>
+                    <option value="custom" {% if agent and agent.type == 'custom' %}selected{% endif %}>Custom</option>
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="description">
+                    คำอธิบาย
+                </label>
+                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="description" name="description" rows="3" placeholder="คำอธิบายเกี่ยวกับ Agent">{{ agent.description if agent else '' }}</textarea>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="endpoint">
+                    Endpoint
+                </label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="endpoint" name="endpoint" type="text" placeholder="https://api.example.com/agent"
+                    value="{{ agent.endpoint if agent else '' }}" required>
+                <p class="text-gray-600 text-xs italic mt-1">URL สำหรับเรียกใช้งาน Agent</p>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="template">
+                    Prompt Template
+                </label>
+                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline font-mono"
+                    id="template" name="template" rows="8" placeholder="ระบุ prompt template สำหรับ Agent">{{ template.content if template else '' }}</textarea>
+                <p class="text-gray-600 text-xs italic mt-1">ใช้ {input} เพื่อแทนที่ข้อความที่จะส่งเข้ามา</p>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                    {{ "บันทึกการแก้ไข" if agent else "สร้าง Agent" }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // เพิ่ม JavaScript สำหรับจัดการฟอร์มถ้าจำเป็น
+    document.addEventListener('DOMContentLoaded', function() {
+        // ตัวอย่าง: แสดง/ซ่อนฟิลด์เพิ่มเติมตามประเภทที่เลือก
+        const typeSelect = document.getElementById('type');
+        typeSelect.addEventListener('change', function() {
+            // เพิ่มโลจิกตามต้องการ
+        });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

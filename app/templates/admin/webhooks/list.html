@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}จัดการ Webhooks | AI Orchestration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold">Webhooks</h1>
+        <a href="{{ url_for('admin.create_webhook') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            สร้าง Webhook ใหม่
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="mb-4 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+                <tr>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                        ชื่อ
+                    </th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                        URL
+                    </th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                        Events
+                    </th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                        สถานะ
+                    </th>
+                    <th class="px-6 py-3 bg-gray-50"></th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for webhook in webhooks %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-no-wrap">
+                        <div class="text-sm leading-5 font-medium text-gray-900">
+                            {{ webhook.name }}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500">
+                        {{ webhook.url }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-no-wrap">
+                        <div class="flex flex-wrap gap-1">
+                            {% for event in webhook.events %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {{ event }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-no-wrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if webhook.active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ "เปิดใช้งาน" if webhook.active else "ปิดใช้งาน" }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-no-wrap text-right text-sm leading-5 font-medium">
+                        <div class="flex justify-end space-x-2">
+                            <a href="{{ url_for('admin.edit_webhook', webhook_id=webhook.id) }}" class="text-blue-600 hover:text-blue-900">
+                                แก้ไข
+                            </a>
+                            <form action="{{ url_for('admin.delete_webhook', webhook_id=webhook.id) }}" method="POST" class="inline" onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะลบ Webhook นี้?');">
+                                <button type="submit" class="text-red-600 hover:text-red-900">ลบ</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+
+                {% if not webhooks %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                        ยังไม่มี Webhook
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
