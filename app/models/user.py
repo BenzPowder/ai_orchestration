@@ -1,33 +1,27 @@
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
 from app import db
 
-class Tenant(db.Model):
-    """โมเดลสำหรับจัดการข้อมูลผู้เช่า"""
-    __tablename__ = 'tenants'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # ความสัมพันธ์กับตาราง users
-    users = db.relationship('User', backref='tenant', lazy=True)
-
-class User(db.Model):
+class User(UserMixin, db.Model):
     """โมเดลสำหรับจัดการข้อมูลผู้ใช้งาน"""
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
     tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255))
+    password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default='user')
     status = db.Column(db.String(20), default='active')
+    is_admin = db.Column(db.Boolean, default=False)
     preferences = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<User {self.username}>'
 
     def set_password(self, password: str) -> None:
         """ตั้งค่ารหัสผ่านโดยการเข้ารหัส"""
@@ -41,16 +35,20 @@ class User(db.Model):
     def create_user(
         cls,
         tenant_id: int,
+        email: str,
         username: str,
         password: str,
         role: str = 'user',
+        is_admin: bool = False,
         status: str = 'active'
     ) -> 'User':
         """สร้างผู้ใช้งานใหม่"""
         user = cls(
             tenant_id=tenant_id,
+            email=email,
             username=username,
             role=role,
+            is_admin=is_admin,
             status=status
         )
         user.set_password(password)

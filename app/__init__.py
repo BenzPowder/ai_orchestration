@@ -1,9 +1,11 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_login import LoginManager
+from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
+from flask_redis import FlaskRedis
+from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import os
 import redis
@@ -16,10 +18,12 @@ load_dotenv()
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
+login_manager = LoginManager()
 limiter = Limiter(
     key_func=get_remote_address,
     storage_uri=os.environ.get("RATELIMIT_STORAGE_URL", "redis://localhost:6379/1")
 )
+redis_client = FlaskRedis()
 
 def create_app():
     """สร้างและกำหนดค่า Flask application"""
@@ -47,8 +51,24 @@ def create_app():
     migrate.init_app(app, db)
     jwt.init_app(app)
     limiter.init_app(app)
+    redis_client.init_app(app)
+    
+    # ตั้งค่า Flask-Login
+    login_manager.init_app(app)
+    login_manager.login_view = 'admin.login'
+    login_manager.login_message = 'กรุณาเข้าสู่ระบบก่อนเข้าใช้งาน'
+    login_manager.login_message_category = 'warning'
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        from app.models.user import User
+        return User.query.get(int(user_id))
     
     with app.app_context():
+        # นำเข้า CLI commands
+        from app.cli import create_admin
+        app.cli.add_command(create_admin)
+        
         # ลงทะเบียน blueprints
         from app.blueprints import admin, api
         app.register_blueprint(admin.admin_bp)

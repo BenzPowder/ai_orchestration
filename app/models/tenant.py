@@ -1,32 +1,19 @@
-from . import db, generate_uuid
 from datetime import datetime
+from app import db
 
 class Tenant(db.Model):
-    """โมเดลสำหรับเก็บข้อมูลหน่วยงาน (Tenant)"""
+    """โมเดลสำหรับจัดการข้อมูลผู้เช่า"""
     __tablename__ = 'tenants'
 
-    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
-    name = db.Column(db.String(255), nullable=False)
-    api_key = db.Column(db.String(255), unique=True, nullable=False)
-    status = db.Column(db.Enum('active', 'inactive'), default='active')
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    description = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='active')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationships
+    # ความสัมพันธ์กับตาราง users
     users = db.relationship('User', backref='tenant', lazy=True)
-    webhooks = db.relationship('Webhook', backref='tenant', lazy=True)
-    
-    @classmethod
-    def get_by_api_key(cls, api_key):
-        """ค้นหา Tenant จาก API Key"""
-        return cls.query.filter_by(api_key=api_key, status='active').first()
 
-    def to_dict(self):
-        """แปลงข้อมูลเป็น dictionary"""
-        return {
-            'id': self.id,
-            'name': self.name,
-            'status': self.status,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
-        }
+    def __repr__(self):
+        return f'<Tenant {self.name}>'

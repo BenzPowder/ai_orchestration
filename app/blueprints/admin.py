@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required, current_user
+from flask_login import login_required, current_user, login_user, logout_user
 from datetime import datetime, timedelta
+from werkzeug.security import check_password_hash
 
 from app.models import db
 from app.models.tenant import Tenant
@@ -9,6 +10,33 @@ from app.models.ai_agent import AIAgent, AgentTemplate, TenantAgentPermission
 from app.models.logging import UsageLog, Webhook
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+@admin_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    """หน้าเข้าสู่ระบบ"""
+    if current_user.is_authenticated:
+        return redirect(url_for('admin.index'))
+        
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        user = User.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password_hash, password):
+            login_user(user)
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('admin.index'))
+        
+        flash('อีเมลหรือรหัสผ่านไม่ถูกต้อง', 'error')
+    
+    return render_template('admin/login.html')
+
+@admin_bp.route('/logout')
+@login_required
+def logout():
+    """ออกจากระบบ"""
+    logout_user()
+    return redirect(url_for('admin.login'))
 
 @admin_bp.route('/')
 @login_required
