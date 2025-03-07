@@ -1,9 +1,9 @@
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import json
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.chains import LLMChain
+from langchain_community.chat_models import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
 from app.models import db
 from app.models.ai_agent import AIAgent, AgentTemplate
@@ -180,14 +180,12 @@ class AIManager:
         # สร้าง Prompt
         prompt = ChatPromptTemplate.from_template(template.content)
         
-        # สร้าง Chain
-        chain = LLMChain(llm=self.llm, prompt=prompt)
-        
-        # ประมวลผล
-        response = chain.run(
-            message=message,
-            context=context or {}
-        )
+        # สร้าง Chain และประมวลผล
+        chain = prompt | self.llm | StrOutputParser()
+        response = chain.invoke({
+            "message": message,
+            "context": context or {}
+        })
         
         return {
             'content': response,
