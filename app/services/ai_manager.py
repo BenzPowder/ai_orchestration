@@ -1,7 +1,7 @@
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import json
-from langchain_community.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
 
@@ -201,7 +201,7 @@ class AIManager:
         data: Dict[str, Any]
     ) -> None:
         """
-        ส่งข้อมูลไปยัง Webhook ที่ลงทะเบียนไว้
+        ส่ง Webhook ไปยัง URL ที่กำหนด
         
         Args:
             tenant_id (str): ID ของ Tenant
@@ -210,14 +210,13 @@ class AIManager:
         """
         webhooks = Webhook.query.filter_by(
             tenant_id=tenant_id,
+            event=event,
             status='active'
         ).all()
         
         for webhook in webhooks:
-            if event in webhook.events:
-                send_webhook_event(
-                    url=webhook.url,
-                    event=event,
-                    data=data,
-                    headers=webhook.headers
-                )
+            try:
+                send_webhook_event(webhook.url, event, data)
+            except Exception as e:
+                # บันทึก Log แต่ไม่ raise error
+                print(f"Webhook error: {str(e)}")
