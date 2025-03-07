@@ -29,19 +29,23 @@ def create_app():
     """สร้างและกำหนดค่า Flask application"""
     app = Flask(__name__)
     
-    # ตั้งค่า configuration
-    db_user = quote_plus(os.environ.get('DB_USER', ''))
-    db_password = quote_plus(os.environ.get('DB_PASSWORD', ''))
-    db_host = os.environ.get('DB_HOST', '')
-    db_name = os.environ.get('DB_NAME', '')
-    
-    # สร้าง Database URL ที่สมบูรณ์ โดยใช้ pymysql driver และ URL encoding
-    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}?charset=utf8mb4"
+    # ตั้งค่า Database URL
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        # ถ้าไม่มี DATABASE_URL ให้สร้างจากค่าแยก
+        db_user = quote_plus(os.environ.get('DB_USER', ''))
+        db_password = quote_plus(os.environ.get('DB_PASSWORD', ''))
+        db_host = os.environ.get('DB_HOST', '')
+        db_name = os.environ.get('DB_NAME', '')
+        database_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}?charset=utf8mb4"
+    elif not database_url.startswith('mysql+pymysql://'):
+        # เพิ่ม driver prefix ถ้ายังไม่มี
+        database_url = database_url.replace('mysql://', 'mysql+pymysql://')
     
     app.config.from_mapping(
         SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
         JWT_SECRET_KEY=os.environ.get('JWT_SECRET_KEY', 'dev'),
-        SQLALCHEMY_DATABASE_URI=db_url,
+        SQLALCHEMY_DATABASE_URI=database_url,
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         OPENAI_API_KEY=os.environ.get('OPENAI_API_KEY'),
         RATELIMIT_STORAGE_URL=os.environ.get("RATELIMIT_STORAGE_URL", "redis://localhost:6379/1"),
