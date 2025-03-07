@@ -3,85 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Orchestration System</title>
+    <title>AI Orchestration - {% block title %}{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-        * {
+        body {
             font-family: 'Sarabun', sans-serif;
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 min-h-screen">
     <!-- Navbar -->
-    <nav class="bg-white shadow">
+    <nav class="bg-white shadow-sm">
         <div class="container mx-auto px-4">
-            <div class="flex justify-between h-16">
-                <!-- Logo และเมนูหลัก -->
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <a href="{{ url_for('index') }}" class="text-xl font-bold text-blue-600">
-                            AI Orchestration
-                        </a>
-                    </div>
-                    <div class="hidden md:ml-6 md:flex md:space-x-8">
-                        <a href="{{ url_for('index') }}" 
-                           class="{% if request.endpoint == 'index' %}text-blue-600 border-blue-600{% else %}text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            หน้าแรก
-                        </a>
-                        <a href="{{ url_for('agents') }}"
-                           class="{% if request.endpoint == 'agents' %}text-blue-600 border-blue-600{% else %}text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            AI Agents
-                        </a>
-                    </div>
-                </div>
-
-                <!-- เมนูมือถือ -->
-                <div class="md:hidden flex items-center">
-                    <button type="button" 
-                            onclick="toggleMobileMenu()"
-                            class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo และชื่อแอพ -->
+                <div class="flex items-center">
+                    <a href="{{ url_for('index') }}" class="flex items-center space-x-2">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                         </svg>
-                    </button>
+                        <span class="text-xl font-semibold text-gray-800">AI Orchestration</span>
+                    </a>
                 </div>
-            </div>
-        </div>
 
-        <!-- เมนูมือถือ -->
-        <div id="mobileMenu" class="hidden md:hidden">
-            <div class="px-2 pt-2 pb-3 space-y-1">
-                <a href="{{ url_for('index') }}"
-                   class="{% if request.endpoint == 'index' %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} block px-3 py-2 rounded-md text-base font-medium">
-                    หน้าแรก
-                </a>
-                <a href="{{ url_for('agents') }}"
-                   class="{% if request.endpoint == 'agents' %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} block px-3 py-2 rounded-md text-base font-medium">
-                    AI Agents
-                </a>
+                <!-- เมนูหลัก -->
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('agents') }}" class="text-gray-600 hover:text-gray-800 px-3 py-2 rounded-md text-sm font-medium">
+                        AI Agents
+                    </a>
+                    <a href="{{ url_for('list_webhooks') }}" class="text-gray-600 hover:text-gray-800 px-3 py-2 rounded-md text-sm font-medium">
+                        Webhooks
+                    </a>
+                    <a href="{{ url_for('training_data_list') }}" class="text-gray-600 hover:text-gray-800 px-3 py-2 rounded-md text-sm font-medium">
+                        ข้อมูลเทรน
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
-
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="container mx-auto px-4 mt-4">
-                {% for category, message in messages %}
-                    <div class="p-4 mb-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %} relative">
-                        {{ message }}
-                        <button onclick="this.parentElement.remove()" 
-                                class="absolute top-4 right-4 text-gray-400 hover:text-gray-500">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
 
     <!-- เนื้อหาหลัก -->
     <main>
@@ -89,34 +50,15 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-12">
-        <div class="container mx-auto px-4 py-8">
-            <div class="text-center text-gray-500 text-sm">
-                &copy; {{ now.year }} AI Orchestration System. All rights reserved.
+    <footer class="bg-white border-t mt-12">
+        <div class="container mx-auto px-4 py-6">
+            <div class="text-center text-gray-600 text-sm">
+                AI Orchestration &copy; {{ now.year }} | พัฒนาด้วย ❤️ โดยทีม AI Support
             </div>
         </div>
     </footer>
 
-    <!-- Scripts -->
-    <script>
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('hidden');
-        }
-
-        // ปิด Flash Messages อัตโนมัติหลังจาก 5 วินาที
-        document.addEventListener('DOMContentLoaded', () => {
-            const messages = document.querySelectorAll('.bg-green-100, .bg-red-100');
-            messages.forEach(message => {
-                setTimeout(() => {
-                    message.style.transition = 'opacity 0.5s ease-out';
-                    message.style.opacity = '0';
-                    setTimeout(() => message.remove(), 500);
-                }, 5000);
-            });
-        });
-    </script>
-
+    <!-- JavaScript -->
     {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,123 +1,126 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สร้าง Webhook ใหม่</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50">
-    <div class="container mx-auto px-4 py-8 max-w-2xl">
-        <!-- หัวข้อหลัก -->
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">สร้าง Webhook ใหม่</h1>
-            <p class="text-gray-600 mt-2">กรอกข้อมูลเพื่อสร้าง webhook สำหรับรับข้อมูลจาก Line OA</p>
-        </div>
+{% extends "base.html" %}
 
-        <!-- แสดงข้อความแจ้งเตือน -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- หัวข้อหน้า -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">{% if webhook %}แก้ไข{% else %}สร้าง{% endif %} Webhook</h1>
+        <p class="mt-2 text-gray-600">กรอกข้อมูลเพื่อ{% if webhook %}แก้ไข{% else %}สร้าง{% endif %} webhook สำหรับรับข้อมูลจากภายนอก</p>
+    </div>
 
-        <!-- ฟอร์มสร้าง Webhook -->
-        <form method="POST" class="bg-white rounded-lg shadow-sm p-6">
-            <div class="space-y-4">
-                <!-- ชื่อ Webhook -->
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">ชื่อ Webhook</label>
-                    <input type="text" 
-                           id="name" 
-                           name="name" 
-                           required
-                           placeholder="ตั้งชื่อ webhook ของคุณ"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+    <!-- แสดงข้อความแจ้งเตือน -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                    {{ message }}
                 </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-                <!-- คำอธิบาย -->
-                <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">คำอธิบาย (ไม่บังคับ)</label>
-                    <textarea id="description" 
-                              name="description" 
-                              rows="3"
-                              placeholder="อธิบายว่า webhook นี้ใช้ทำอะไร"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
-                </div>
+    <!-- ฟอร์มสร้าง/แก้ไข Webhook -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <form method="POST" class="space-y-6">
+            <!-- ชื่อ Webhook -->
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700">ชื่อ Webhook</label>
+                <input type="text" name="name" id="name" 
+                       value="{{ webhook.name if webhook else '' }}"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                       required>
+            </div>
 
-                <!-- ตัวอย่าง URL -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-sm font-medium text-gray-700 mb-2">ตัวอย่าง Webhook URL</h3>
-                    <div class="flex items-center bg-white p-2 rounded border border-gray-200">
-                        <code class="text-sm font-mono break-all flex-1">{{ sample_webhook_url }}</code>
-                        <button type="button"
-                                onclick="copyToClipboard('{{ sample_webhook_url }}')"
-                                class="ml-2 text-blue-600 hover:text-blue-800 p-1"
-                                title="คัดลอก URL">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                            </svg>
-                        </button>
-                    </div>
+            <!-- คำอธิบาย -->
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700">คำอธิบาย</label>
+                <textarea name="description" id="description" rows="3"
+                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ webhook.description if webhook else '' }}</textarea>
+            </div>
 
-                    <!-- แสดง ngrok URL ถ้ามี -->
-                    {% if ngrok_url %}
-                    <div class="mt-4">
-                        <h3 class="text-sm font-medium text-gray-700 mb-2">HTTPS URL (ผ่าน ngrok)</h3>
-                        <div class="flex items-center bg-white p-2 rounded border border-gray-200">
-                            <code class="text-sm font-mono break-all flex-1">{{ ngrok_url }}/{{ sample_webhook_url.split('/')[-1] }}</code>
-                            <button type="button"
-                                    onclick="copyToClipboard('{{ ngrok_url }}/{{ sample_webhook_url.split('/')[-1] }}')"
-                                    class="ml-2 text-blue-600 hover:text-blue-800 p-1"
-                                    title="คัดลอก URL">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                </svg>
-                            </button>
+            <!-- เลือก Agents -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">เลือก Agents ที่ต้องการเชื่อมต่อ</label>
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {% for agent in agents %}
+                        <div class="relative flex items-start">
+                            <div class="flex h-5 items-center">
+                                <input type="checkbox" name="agent_ids" value="{{ agent.id }}"
+                                       {% if webhook and agent.id in webhook.agent_ids %}checked{% endif %}
+                                       class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="agent_{{ agent.id }}" class="font-medium text-gray-700">{{ agent.name }}</label>
+                                {% if agent.description %}
+                                    <p class="text-gray-500">{{ agent.description_short }}</p>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- คำแนะนำการใช้งาน -->
-                    <div class="mt-4 text-sm text-gray-600">
-                        <h4 class="font-medium mb-2">วิธีการใช้งาน:</h4>
-                        <ol class="list-decimal list-inside space-y-1">
-                            <li>คัดลอก URL ไปใส่ในการตั้งค่า Webhook ใน Line Developer Console</li>
-                            <li>ตั้งค่า Webhook ให้เป็น HTTPS URL (ใช้ ngrok หรือ Cloudflare)</li>
-                            <li>เลือกเหตุการณ์ที่ต้องการให้ส่งข้อมูลมาที่ Webhook</li>
-                            <li>กดปุ่ม Verify เพื่อทดสอบการเชื่อมต่อ</li>
-                        </ol>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
 
-            <!-- ปุ่มดำเนินการ -->
-            <div class="mt-6 flex justify-end space-x-3">
-                <a href="{{ url_for('agents') }}" 
-                   class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+            <!-- URL Path -->
+            <div>
+                <label for="url_path" class="block text-sm font-medium text-gray-700">URL Path</label>
+                <div class="mt-1 flex rounded-md shadow-sm">
+                    <span class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 sm:text-sm">
+                        {{ request.host_url }}webhook/
+                    </span>
+                    <input type="text" name="url_path" id="url_path"
+                           value="{{ webhook.url_path.replace('webhook/', '') if webhook else '' }}"
+                           class="block w-full min-w-0 flex-1 rounded-none rounded-r-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                           placeholder="my-webhook">
+                </div>
+            </div>
+
+            <!-- Secret Key -->
+            <div x-data="{ show: false }">
+                <label for="secret_key" class="block text-sm font-medium text-gray-700">Secret Key</label>
+                <div class="mt-1 flex rounded-md shadow-sm">
+                    <input :type="show ? 'text' : 'password'"
+                           name="secret_key" id="secret_key"
+                           value="{{ webhook.secret_key if webhook else '' }}"
+                           class="block w-full rounded-l-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                           placeholder="••••••••">
+                    <button type="button" @click="show = !show"
+                            class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-gray-500 hover:bg-gray-100">
+                        <svg x-show="!show" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        <svg x-show="show" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- สถานะ -->
+            <div class="relative flex items-start">
+                <div class="flex h-5 items-center">
+                    <input type="checkbox" name="is_active" id="is_active"
+                           {% if not webhook or webhook.is_active %}checked{% endif %}
+                           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                </div>
+                <div class="ml-3 text-sm">
+                    <label for="is_active" class="font-medium text-gray-700">เปิดใช้งาน</label>
+                    <p class="text-gray-500">Webhook จะรับข้อมูลได้เมื่อเปิดใช้งานเท่านั้น</p>
+                </div>
+            </div>
+
+            <!-- ปุ่มบันทึก/ยกเลิก -->
+            <div class="flex justify-end space-x-4">
+                <a href="{{ url_for('webhooks') }}"
+                   class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                     ยกเลิก
                 </a>
-                <button type="submit" 
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                    สร้าง Webhook
+                <button type="submit"
+                        class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    บันทึก
                 </button>
             </div>
         </form>
     </div>
-
-    <script>
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('คัดลอก URL สำเร็จ');
-            }).catch(err => {
-                console.error('ไม่สามารถคัดลอก URL:', err);
-                alert('ไม่สามารถคัดลอก URL กรุณาคัดลอกเอง');
-            });
-        }
-    </script>
-</body>
-</html>
+</div>
+{% endblock %}

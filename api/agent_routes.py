@@ -5,6 +5,18 @@ from extensions import db
 from ai import SubAgent
 from datetime import datetime
 
+@api.route('/agents', methods=['GET'])
+def get_agents():
+    """ดึงรายการ AI Agents ทั้งหมด"""
+    agents = AIAgent.query.order_by(AIAgent.created_at.desc()).all()
+    return jsonify([{
+        'id': agent.id,
+        'name': agent.name,
+        'description': agent.description,
+        'type': agent.type,
+        'created_at': agent.created_at.isoformat() if agent.created_at else None
+    } for agent in agents])
+
 @api.route('/agents', methods=['POST'])
 def create_agent():
     """สร้าง AI Sub-agent ใหม่"""

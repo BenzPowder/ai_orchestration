@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- หัวข้อและปุ่มย้อนกลับ -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">ประวัติการทำงานของ Webhook</h1>
+            <p class="mt-2 text-gray-600">{{ webhook.name }}</p>
+        </div>
+        <a href="{{ url_for('list_webhooks') }}"
+           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            ย้อนกลับ
+        </a>
+    </div>
+
+    <!-- แสดงข้อความแจ้งเตือน -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- รายการ Logs -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        {% if logs %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                เวลา
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                สถานะ
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                ข้อความ
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                รายละเอียด
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for log in logs %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ log.timestamp | format_datetime }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if log.status == 'success' %}
+                                            bg-green-100 text-green-800
+                                        {% elif log.status == 'error' %}
+                                            bg-red-100 text-red-800
+                                        {% else %}
+                                            bg-gray-100 text-gray-800
+                                        {% endif %}">
+                                        {{ log.status }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-500">
+                                    {{ log.message }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if log.details %}
+                                        <button type="button" 
+                                                onclick="toggleDetails('{{ loop.index }}')"
+                                                class="text-blue-600 hover:text-blue-900">
+                                            แสดงรายละเอียด
+                                        </button>
+                                        <div id="details-{{ loop.index }}" class="hidden mt-2 text-sm text-gray-500">
+                                            <pre class="whitespace-pre-wrap">{{ log.details | tojson(indent=2) }}</pre>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-sm text-gray-500">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-6 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">ไม่มีประวัติการทำงาน</h3>
+                <p class="mt-1 text-sm text-gray-500">ยังไม่มีการเรียกใช้งาน webhook นี้</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- JavaScript สำหรับแสดง/ซ่อนรายละเอียด -->
+<script>
+function toggleDetails(id) {
+    const details = document.getElementById(`details-${id}`);
+    if (details.classList.contains('hidden')) {
+        details.classList.remove('hidden');
+    } else {
+        details.classList.add('hidden');
+    }
+}
+</script>
+{% endblock %}
