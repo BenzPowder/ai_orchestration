@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agents</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <!-- หัวข้อหลัก -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">AI Agents</h1>
+            <a href="{{ url_for('new_agent') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                + เพิ่ม Agent
+            </a>
+        </div>
+
+        <!-- แสดงข้อความแจ้งเตือน -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- รายการ Agents -->
+        <div class="grid gap-6">
+            {% for agent in agents %}
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800">{{ agent.name }}</h2>
+                        {% if agent.description %}
+                        <p class="text-gray-600 mt-1">{{ agent.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="flex space-x-2">
+                        <a href="{{ url_for('edit_agent', id=agent.id) }}" 
+                           class="text-blue-600 hover:text-blue-800">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </a>
+                        <button onclick="deleteAgent('{{ agent.id }}')"
+                                class="text-red-600 hover:text-red-800">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ส่วนของ Webhooks -->
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-semibold text-gray-800">Webhooks</h3>
+                        <a href="{{ url_for('new_webhook', id=agent.id) }}" 
+                           class="text-sm text-blue-600 hover:text-blue-800">
+                            + เพิ่ม Webhook
+                        </a>
+                    </div>
+                    <div class="space-y-3">
+                        {% for webhook in agent.webhooks %}
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium text-gray-800">{{ webhook.name }}</span>
+                                <div class="flex space-x-2">
+                                    <button onclick="toggleWebhook('{{ webhook.id }}')" 
+                                            class="text-sm px-3 py-1 rounded-full {% if webhook.is_active %}bg-green-100 text-green-800{% else %}bg-gray-200 text-gray-600{% endif %}">
+                                        {{ 'เปิดใช้งาน' if webhook.is_active else 'ปิดใช้งาน' }}
+                                    </button>
+                                    <button onclick="viewWebhookLogs('{{ webhook.id }}')" 
+                                            class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+                                        ดูประวัติ
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {% if webhook.description %}
+                            <p class="text-sm text-gray-600 mb-2">{{ webhook.description }}</p>
+                            {% endif %}
+
+                            <!-- URL สำหรับ Line OA -->
+                            <div class="mt-2 bg-white p-3 rounded border border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-xs text-gray-500 mb-1">Webhook URL:</p>
+                                        <div>
+                                            <code class="text-sm font-mono break-all">{{ request.host_url.rstrip('/') }}/{{ webhook.url_path }}</code>
+                                            {% if not request.host_url.startswith('https://') %}
+                                            <p class="text-xs text-red-600 mt-1 flex items-center">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                </svg>
+                                                Line OA ต้องการ HTTPS URL
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <button onclick="copyWebhookUrl('{{ request.host_url.rstrip('/') }}/{{ webhook.url_path }}')"
+                                            class="ml-2 text-blue-600 hover:text-blue-800 p-1"
+                                            title="คัดลอก URL">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                {% if webhook.secret_key %}
+                                <div class="mt-2">
+                                    <p class="text-xs text-gray-500 mb-1">Secret Key:</p>
+                                    <div class="flex items-center">
+                                        <code class="flex-1 text-sm font-mono bg-gray-50 p-1 rounded">{{ webhook.secret_key }}</code>
+                                        <button onclick="copyWebhookUrl('{{ webhook.secret_key }}')"
+                                                class="ml-2 text-blue-600 hover:text-blue-800 p-1"
+                                                title="คัดลอก Secret Key">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if not request.host_url.startswith('https://') %}
+                                <div class="mt-2 text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
+                                    <p class="font-medium">ทางเลือกในการใช้ HTTPS:</p>
+                                    <ul class="list-disc list-inside mt-1 space-y-0.5">
+                                        <li>ใช้ Cloudflare</li>
+                                        <li>ใช้ ngrok</li>
+                                        <li>ติดตั้ง SSL certificate</li>
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- ส่วนของข้อมูลเทรน -->
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-semibold text-gray-800">ข้อมูลเทรน</h3>
+                        <a href="{{ url_for('new_training_data', id=agent.id) }}" 
+                           class="text-sm text-blue-600 hover:text-blue-800">
+                            + เพิ่มข้อมูลเทรน
+                        </a>
+                    </div>
+                    <div class="space-y-3">
+                        {% for data in agent.training_data %}
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-medium text-gray-800">{{ data.prompt }}</p>
+                                    {% if data.description %}
+                                    <p class="text-sm text-gray-600 mt-1">{{ data.description }}</p>
+                                    {% endif %}
+                                </div>
+                                <button onclick="deleteTrainingData('{{ agent.id }}', '{{ data.id }}')"
+                                        class="text-red-600 hover:text-red-800 ml-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <p class="text-gray-600">ยังไม่มี Agent คุณสามารถเพิ่ม Agent ใหม่ได้</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Modal สำหรับแสดงประวัติ Webhook -->
+    <div id="webhookLogsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden">
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg w-full max-w-2xl">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">ประวัติการทำงาน Webhook</h3>
+                    <button onclick="closeWebhookLogsModal()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="webhookLogsContent" class="space-y-4 max-h-96 overflow-y-auto">
+                    <!-- ข้อมูลประวัติจะถูกเพิ่มที่นี่ -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyWebhookUrl(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('คัดลอก URL สำเร็จ');
+            }).catch(err => {
+                console.error('ไม่สามารถคัดลอก URL:', err);
+                alert('ไม่สามารถคัดลอก URL กรุณาคัดลอกเอง');
+            });
+        }
+
+        function toggleWebhook(webhookId) {
+            fetch(`/webhook/toggle/${webhookId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ webhook');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ webhook');
+                });
+        }
+
+        function viewWebhookLogs(webhookId) {
+            fetch(`/webhook/logs/${webhookId}`)
+                .then(response => response.json())
+                .then(logs => {
+                    const content = document.getElementById('webhookLogsContent');
+                    content.innerHTML = '';
+                    
+                    if (logs.length === 0) {
+                        content.innerHTML = '<p class="text-gray-600 text-center py-4">ยังไม่มีประวัติการทำงาน</p>';
+                        return;
+                    }
+                    
+                    logs.forEach(log => {
+                        const logElement = document.createElement('div');
+                        logElement.className = 'bg-gray-50 p-4 rounded-lg';
+                        
+                        const date = new Date(log.created_at);
+                        const formattedDate = date.toLocaleString('th-TH');
+                        
+                        logElement.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <span class="text-sm text-gray-600">${formattedDate}</span>
+                            </div>
+                            <div class="mt-2">
+                                <pre class="text-sm bg-gray-100 p-2 rounded overflow-x-auto">${JSON.stringify(log.request_data, null, 2)}</pre>
+                            </div>
+                        `;
+                        content.appendChild(logElement);
+                    });
+                    
+                    document.getElementById('webhookLogsModal').classList.remove('hidden');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการโหลดประวัติ webhook');
+                });
+        }
+
+        function closeWebhookLogsModal() {
+            document.getElementById('webhookLogsModal').classList.add('hidden');
+        }
+
+        function deleteAgent(agentId) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบ Agent นี้?')) {
+                fetch(`/agents/${agentId}/delete`, { method: 'POST' })
+                    .then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('เกิดข้อผิดพลาดในการลบ Agent');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('เกิดข้อผิดพลาดในการลบ Agent');
+                    });
+            }
+        }
+
+        function deleteTrainingData(agentId, dataId) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลเทรนนี้?')) {
+                fetch(`/agents/${agentId}/training/${dataId}/delete`, { method: 'POST' })
+                    .then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('เกิดข้อผิดพลาดในการลบข้อมูลเทรน');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('เกิดข้อผิดพลาดในการลบข้อมูลเทรน');
+                    });
+            }
+        }
+    </script>
+</body>
+</html>

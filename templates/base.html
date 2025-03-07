@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Orchestration System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        * {
+            font-family: 'Sarabun', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-white shadow">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <!-- Logo และเมนูหลัก -->
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{{ url_for('index') }}" class="text-xl font-bold text-blue-600">
+                            AI Orchestration
+                        </a>
+                    </div>
+                    <div class="hidden md:ml-6 md:flex md:space-x-8">
+                        <a href="{{ url_for('index') }}" 
+                           class="{% if request.endpoint == 'index' %}text-blue-600 border-blue-600{% else %}text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            หน้าแรก
+                        </a>
+                        <a href="{{ url_for('agents') }}"
+                           class="{% if request.endpoint == 'agents' %}text-blue-600 border-blue-600{% else %}text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            AI Agents
+                        </a>
+                    </div>
+                </div>
+
+                <!-- เมนูมือถือ -->
+                <div class="md:hidden flex items-center">
+                    <button type="button" 
+                            onclick="toggleMobileMenu()"
+                            class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- เมนูมือถือ -->
+        <div id="mobileMenu" class="hidden md:hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="{{ url_for('index') }}"
+                   class="{% if request.endpoint == 'index' %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} block px-3 py-2 rounded-md text-base font-medium">
+                    หน้าแรก
+                </a>
+                <a href="{{ url_for('agents') }}"
+                   class="{% if request.endpoint == 'agents' %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-50 hover:text-gray-900{% endif %} block px-3 py-2 rounded-md text-base font-medium">
+                    AI Agents
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mx-auto px-4 mt-4">
+                {% for category, message in messages %}
+                    <div class="p-4 mb-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %} relative">
+                        {{ message }}
+                        <button onclick="this.parentElement.remove()" 
+                                class="absolute top-4 right-4 text-gray-400 hover:text-gray-500">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- เนื้อหาหลัก -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="container mx-auto px-4 py-8">
+            <div class="text-center text-gray-500 text-sm">
+                &copy; {{ now.year }} AI Orchestration System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // ปิด Flash Messages อัตโนมัติหลังจาก 5 วินาที
+        document.addEventListener('DOMContentLoaded', () => {
+            const messages = document.querySelectorAll('.bg-green-100, .bg-red-100');
+            messages.forEach(message => {
+                setTimeout(() => {
+                    message.style.transition = 'opacity 0.5s ease-out';
+                    message.style.opacity = '0';
+                    setTimeout(() => message.remove(), 500);
+                }, 5000);
+            });
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

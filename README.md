@@ -1,118 +1,92 @@
 # AI Orchestration System
 
-ระบบจัดการ AI แบบ Multi-tenant ที่มีความยืดหยุ่นและปลอดภัย สามารถจัดการ AI Sub-Agents และการประมวลผลข้อความได้อย่างมีประสิทธิภาพ
+ระบบจัดการ AI ที่สามารถสร้างและจัดการ Sub-agents ได้ โดยมี AI Manager ทำหน้าที่วิเคราะห์และส่งต่องานให้ Sub-agents ที่เหมาะสม
 
 ## คุณสมบัติหลัก
 
-- **Multi-tenant Architecture**: รองรับหลายองค์กรในระบบเดียว พร้อมการแยกข้อมูลและการเข้าถึง
-- **AI Sub-Agent Management**: จัดการและกำหนดค่า AI Sub-Agents ได้อย่างยืดหยุ่น
-- **ความปลอดภัย**: ระบบ RBAC และการยืนยันตัวตนด้วย JWT
-- **การติดตามและวิเคราะห์**: บันทึกและวิเคราะห์การใช้งานอย่างละเอียด
-- **Webhook Integration**: รองรับการเชื่อมต่อกับระบบภายนอกผ่าน webhooks
-- **Rate Limiting**: ควบคุมการใช้งาน API อย่างมีประสิทธิภาพ
-- **Template Management**: จัดการ prompt templates สำหรับ AI Sub-Agents
+- **AI Manager**: วิเคราะห์ข้อความและเลือก Sub-agent ที่เหมาะสม
+- **Sub-agents**: AI ที่ถูกสร้างขึ้นเพื่อจัดการงานเฉพาะด้าน
+- **Webhook System**: รองรับการเชื่อมต่อกับ LINE OA และระบบภายนอก
+- **Training System**: สามารถเพิ่มข้อมูลสำหรับการเทรน Sub-agents
+- **Web Interface**: จัดการระบบผ่าน Web UI
 
 ## การติดตั้ง
-
-1. Clone repository:
-```bash
-git clone https://github.com/yourusername/ai-orchestration.git
-cd ai-orchestration
-```
-
-2. สร้าง virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
-```
-
-3. ติดตั้ง dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-4. ตั้งค่า environment variables:
-```bash
-cp .env.example .env
-# แก้ไขไฟล์ .env ตามการตั้งค่าของคุณ
-```
-
-5. สร้างฐานข้อมูล:
-```bash
-flask db upgrade
-```
-
-## การใช้งาน
-
-1. รัน development server:
-```bash
-flask run
-```
-
-2. เข้าถึง API ที่:
-- API Endpoint: `http://localhost:5000/api`
-- Admin Dashboard: `http://localhost:5000/admin`
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/login`: เข้าสู่ระบบและรับ JWT token
-- `POST /api/auth/register`: ลงทะเบียนผู้ใช้ใหม่
-
-### AI Processing
-- `POST /api/process`: ประมวลผลข้อความด้วย AI
-- `GET /api/agents`: ดูรายการ AI Sub-Agents ที่มี
-
-### Admin API
-- `POST /api/admin/agents`: สร้าง AI Sub-Agent ใหม่
-- `GET /api/admin/stats`: ดูสถิติการใช้งาน
-
-## การ Deploy
-
-### Deploy บน Render
-
-1. เชื่อมต่อ GitHub repository กับ Render
-
-2. Render จะตั้งค่าบริการต่อไปนี้อัตโนมัติ:
-   - Web service สำหรับ AI Orchestration
-   - MySQL database
-   - Redis cache
-
-3. ตั้งค่า Environment Variables บน Render ตามที่ระบุใน `.env.example`
-
-### Deploy แบบ Manual
 
 1. ติดตั้ง dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. ตั้งค่า environment variables
-
-3. รัน production server:
-```bash
-gunicorn app:create_app() --bind 0.0.0.0:$PORT
+2. ตั้งค่าไฟล์ .env:
+```env
+DATABASE_URL=mssql+pyodbc://username:password@host/database?driver=ODBC+Driver+17+for+SQL+Server
+SECRET_KEY=your-secret-key
+OPENAI_API_KEY=your-openai-api-key
 ```
 
-## การพัฒนา
-
-### โครงสร้างโปรเจค
-
-ดูรายละเอียดเพิ่มเติมได้ที่ [docs/project_structure.md](docs/project_structure.md)
-
-### การทดสอบ
-
-รันชุดทดสอบ:
-```bash
-pytest
+3. สร้างฐานข้อมูล:
+```python
+python app.py
 ```
 
-รันพร้อม coverage report:
-```bash
-pytest --cov=app tests/
+## โครงสร้างโปรเจกต์
+
+```
+ai_orchestration/
+├── ai/                    # โค้ดส่วน AI
+│   ├── __init__.py
+│   ├── manager.py        # AI Manager
+│   └── sub_agent.py      # Sub-agent class
+├── api/                   # API endpoints
+│   ├── __init__.py
+│   ├── webhook_routes.py # Webhook endpoints
+│   └── agent_routes.py   # Agent management endpoints
+├── models/               # Database models
+│   ├── __init__.py
+│   ├── user.py          # User model
+│   ├── project.py       # Project model
+│   ├── ai_agent.py      # AI Agent model
+│   ├── webhook.py       # Webhook model
+│   └── training_data.py # Training data model
+├── templates/           # Web UI templates
+├── app.py              # Main application
+├── extensions.py       # Flask extensions
+└── requirements.txt    # Project dependencies
 ```
 
-## License
+## การใช้งาน
 
-MIT License - ดูรายละเอียดเพิ่มเติมได้ที่ [LICENSE](LICENSE)
+1. **การสร้าง Sub-agent**:
+   - เข้าสู่ระบบผ่าน Web UI
+   - สร้างโปรเจกต์ใหม่
+   - เพิ่ม Sub-agent และกำหนด prompt template
+
+2. **การสร้าง Webhook**:
+   - เลือก Sub-agent ที่ต้องการ
+   - สร้าง Webhook URL
+   - นำ URL และ Secret key ไปตั้งค่าใน LINE OA หรือระบบอื่นๆ
+
+3. **การเทรน Sub-agent**:
+   - เข้าไปที่หน้า Sub-agent
+   - เพิ่มข้อมูลสำหรับการเทรน (input และ expected output)
+   - อัพเดท prompt template ตามต้องการ
+
+## API Endpoints
+
+### Webhook
+- `POST /api/webhook/<url_path>`: รับข้อมูลจาก webhook
+- `GET /api/webhook/logs/<webhook_id>`: ดูประวัติการเรียกใช้ webhook
+
+### Agent Management
+- `POST /api/agents`: สร้าง Sub-agent ใหม่
+- `POST /api/agents/<agent_id>/training-data`: เพิ่มข้อมูลสำหรับการเทรน
+- `PUT /api/agents/<agent_id>/prompt`: อัพเดท prompt template
+- `GET /api/agents/<agent_id>/training-data`: ดูข้อมูลการเทรนทั้งหมด
+
+## การพัฒนาต่อ
+
+1. เพิ่มความสามารถในการใช้ AI Model อื่นๆ นอกจาก OpenAI
+2. เพิ่มระบบ monitoring และ analytics
+3. เพิ่มความสามารถในการทำ A/B testing สำหรับ prompts
+4. รองรับการทำงานแบบ multi-tenant
+5. เพิ่มระบบ authentication สำหรับ API
